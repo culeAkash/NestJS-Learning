@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto, UserDto } from 'src/users/dto/user.dto';
+import { CreateUserDto, UpdateUserDto, UserDto } from 'src/users/dto/user.dto';
 import bcryptjs from 'bcryptjs';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -27,18 +28,64 @@ export class UserService {
     return newUserDto;
   }
 
+  async updateUser(user: UpdateUserDto, userId: string): Promise<UserDto> {
+    const updatedUser = await this.prismaService.user.update({
+      where: { id: userId },
+      data: {
+        name: user.name,
+        email: user.email,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    if (!updatedUser) {
+      throw new NotFoundException(`User not found with id ${userId}`);
+    }
+    return updatedUser;
+  }
+
   async getAllUsers() {
-    const users = await this.prismaService.user.findMany();
-    console.log(users);
+    const users: UserDto[] = await this.prismaService.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    // console.log(users);
     return users;
   }
 
-  async getUserByUserId(userId: string): Promise<CreateUserDto> {
-    const userByUserId = await this.prismaService.user.findUnique({
+  async getUserByIdentifier(identifier: string): Promise<User> {
+    const userByUserId = await this.prismaService.user.findFirst({
       where: {
-        id: parseInt(userId),
+        OR: [{ name: identifier }, { email: identifier }],
       },
     });
-    return userByUserId as CreateUserDto;
+    return userByUserId;
+  }
+
+  async getUserByUserId(userId: string): Promise<UserDto> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`User not found with id ${userId}`);
+    }
+    return user;
   }
 }

@@ -12,8 +12,16 @@ export class CreateUserDto {
   password: string;
 }
 
+export class UpdateUserDto {
+  name: string;
+  @IsEmail(undefined, {
+    message: 'Email is invalid',
+  })
+  email: string;
+}
+
 export class UserDto {
-  id: number;
+  id: string;
   name: string;
   email: string;
   createdAt: Date;

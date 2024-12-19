@@ -3,35 +3,29 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UserService } from './user.service';
-import { CreateUserDto } from 'src/users/dto/user.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { CreateUserDto, UpdateUserDto, UserDto } from 'src/users/dto/user.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
 
 @Controller('api/users/')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getAllUsers(@Res() response: Response) {
-    const allUsers = await this.userService.getAllUsers();
-    console.log(allUsers);
-    return response.status(200).json(allUsers);
-  }
+    // console.log(user);
 
-  @Get('/userId/:userId')
-  async getUserById(
-    @Res() response: Response,
-    @Param('userId') userId: string,
-  ) {
-    const user = await this.userService.getUserByUserId(userId);
-    console.log(user);
-    return response.status(200).json(user);
+    const allUsers = await this.userService.getAllUsers();
+    // console.log(allUsers);
+    return response.status(200).json(allUsers);
   }
 
   @Post('/create')
@@ -45,5 +39,27 @@ export class UserController {
     // console.log(userCreated);
 
     return response.status(201).json(userCreated);
+  }
+
+  @Patch('/:userId')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(
+    @CurrentUser() user: UserDto,
+    @Param('userId') userId: string,
+    @Res() response: Response,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    // console.log(user);
+
+    if (user.id.toString() !== userId) {
+      return response.status(403).json({ message: 'Forbidden' });
+    }
+
+    const updatedUser = await this.userService.updateUser(
+      updateUserDto,
+      userId,
+    );
+
+    return response.status(200).json(updatedUser);
   }
 }
