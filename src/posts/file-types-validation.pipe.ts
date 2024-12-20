@@ -11,7 +11,7 @@ export class FileTypeValidationPipe implements PipeTransform {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   transform(values: Express.Multer.File[], metadata: ArgumentMetadata) {
-    console.log(values);
+    // console.log(values);
 
     let isValid: boolean = false;
     values.forEach((value) => {
