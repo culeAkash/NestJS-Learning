@@ -26,7 +26,7 @@ export class AuthService {
 
     const user = await this.userService.getUserByIdentifier(identifier);
 
-    console.log(user);
+    // console.log(user);
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -59,6 +59,16 @@ export class AuthService {
         ),
     );
 
+    const expiresRefreshToken = new Date();
+    expiresRefreshToken.setMilliseconds(
+      expiresRefreshToken.getTime() +
+        parseInt(
+          this.configService.getOrThrow<string>(
+            'JWT_ACCESS_TOKEN_EXPIRATION_MS',
+          ),
+        ),
+    );
+
     const tokenPayload: TokenPayload = {
       userId: user.id.toString(),
     };
@@ -70,10 +80,55 @@ export class AuthService {
       )}ms`,
     });
 
+    const refreshToken = this.jwtService.sign(tokenPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_SECRET'),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        'JWT_REFRESH_TOKEN_EXPIRATION_MS',
+      )}d`,
+    });
+
+    await this.userService.updateUser(
+      {
+        refreshToken: await bcryptjs.hash(refreshToken, 10),
+      },
+      user.id,
+    );
+
+    response.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      expires: expiresRefreshToken,
+    });
+
     response.cookie('auth_token', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
       expires: expiresAccessToken,
     });
+  }
+
+  async verifyUserRefreshToken(refreshToken: string, userId: string) {
+    try {
+      const user = await this.userService.getUserByUserId(userId);
+
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      const isRefreshTokenValid = await bcryptjs.compare(
+        refreshToken,
+        user.refreshToken,
+      );
+
+      if (!isRefreshTokenValid) {
+        throw new HttpException(
+          'Invalid refresh token',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      return user;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

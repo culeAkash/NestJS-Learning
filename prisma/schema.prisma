@@ -15,6 +15,7 @@ model User {
   password String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  refreshToken String?
   posts Post[]
   Comment Comment[]
   Like Like[]

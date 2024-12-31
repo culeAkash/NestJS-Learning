@@ -13,11 +13,12 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto {
-  name: string;
+  name?: string;
   @IsEmail(undefined, {
     message: 'Email is invalid',
   })
-  email: string;
+  email?: string;
+  refreshToken?: string;
 }
 
 export class UserDto {
@@ -26,4 +27,5 @@ export class UserDto {
   email: string;
   createdAt: Date;
   updatedAt: Date;
+  refreshToken?: string;
 }

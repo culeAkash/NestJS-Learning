@@ -34,6 +34,7 @@ export class UserService {
       data: {
         name: user.name,
         email: user.email,
+        refreshToken: user.refreshToken,
       },
       select: {
         id: true,
@@ -81,6 +82,7 @@ export class UserService {
         email: true,
         createdAt: true,
         updatedAt: true,
+        refreshToken: true,
       },
     });
     if (!user) {

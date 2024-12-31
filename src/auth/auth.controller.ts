@@ -7,6 +7,7 @@ import { UserDto } from 'src/users/dto/user.dto';
 
 import { Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 
 @Controller('api/auth/')
 export class AuthGuardController {
@@ -28,5 +29,16 @@ export class AuthGuardController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('auth_token');
     res.status(200).json({ message: 'Logout successful' });
+  }
+
+  @Post('/refresh')
+  @UseGuards(JwtRefreshAuthGuard)
+  async refreshToken(
+    @CurrentUser() user: UserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // console.log(body);
+
+    await this.authService.loginWithCredentials(user, res);
   }
 }
