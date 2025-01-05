@@ -50,23 +50,20 @@ export class AuthService {
 
   async loginWithCredentials(user: UserDto, response: Response) {
     const expiresAccessToken = new Date();
+
     expiresAccessToken.setMilliseconds(
-      expiresAccessToken.getTime() +
-        parseInt(
-          this.configService.getOrThrow<string>(
-            'JWT_ACCESS_TOKEN_EXPIRATION_MS',
-          ),
-        ),
+      parseInt(
+        this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_EXPIRATION_MS'),
+      ),
     );
 
     const expiresRefreshToken = new Date();
     expiresRefreshToken.setMilliseconds(
-      expiresRefreshToken.getTime() +
-        parseInt(
-          this.configService.getOrThrow<string>(
-            'JWT_ACCESS_TOKEN_EXPIRATION_MS',
-          ),
+      parseInt(
+        this.configService.getOrThrow<string>(
+          'JWT_REFRESH_TOKEN_EXPIRATION_MS',
         ),
+      ),
     );
 
     const tokenPayload: TokenPayload = {
@@ -84,7 +81,7 @@ export class AuthService {
       secret: this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_SECRET'),
       expiresIn: `${this.configService.getOrThrow<string>(
         'JWT_REFRESH_TOKEN_EXPIRATION_MS',
-      )}d`,
+      )}ms`,
     });
 
     await this.userService.updateUser(
